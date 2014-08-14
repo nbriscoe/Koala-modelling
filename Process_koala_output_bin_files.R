@@ -24,8 +24,7 @@ for(jobnum in jstart:jfinish){
   library(data.table)
   file<-paste(i,'sim_',sim,'.bin',sep="")
   load(file)  # Loads file with summed daily values
-  
-  
+
   ## fix up column names
   #colnames(Aust_sites)[20:23]<-c("WTR_G_H","RAINWET","RAINFALL","MAX_PCTWET")
   # use data table to speed things up
@@ -60,10 +59,11 @@ for(jobnum in jstart:jfinish){
   ## From Kearney et al 2011 (greater glider) nitrogen= 1.4% dry matter *6.25 to convert to protein, digestive efficiency 48%
   ## which gives 0.042g per g dry matter ingested, similar to value of Cork et al 1983 that is 
   ## 1.1-1.5% dry matter & 45% digestive efficiency (gives 0.03-0.042g per g dry matter ingested) 
-  Food_N<-(A$LACPRO/0.032) # Daily protein required for milk /digested per g dry matter (Nagy & Martin)
-  Food_N_min<-(A$LACPRO/0.042) # Protein required for milk/digested per g dry matter (Cork) 
+  ## Daily required N for maintanance is equal to 0.271g/kg^0.75/day from Cork et al 1983 
+  Food_N<-(A$LACPROTEIN_G_H/0.032)+((A$MASS_KG^0.75)*0.271/0.032) # Daily protein required for milk /digested per g dry matter (Nagy & Martin)
+  Food_N_min<-(A$LACPROTEIN_G_H/0.042) +((A$MASS_KG^0.75*0.271)/0.042) # Protein required for milk/digested per g dry matter (Cork) 
   A<-cbind(A,Food_EN,Food_EN_NOMILK,Food_WTL,Food_WTM,Food_WTH,Food_N,Food_N_min)
-  
+    
   # # Now check if required food intake exceeds average or maximum
   # # Average = 41.4 g/kg^0.75/day (Cork, Hume & Dawson)
   ## NB. edit 11/8/14 Average now calculated from Ellis et al 1995 so both mass^1
@@ -239,6 +239,9 @@ for(jobnum in jstart:jfinish){
   Koala_limits_yearly<-cbind(Koala_limits_yearly,WaterIndex)
   
   ## Now check which factor is limiting across the year
+  # 0 = energy
+  # 1 = water
+  # 2 = protein
   Limiting_low<-with(Koala_limits_yearly,ifelse(Food_EN>Food_WTL_min,0,1))
   Limiting_low<-with(Koala_limits_yearly,ifelse(Food_N>Food_WTL_min & Food_N>Food_EN,2,Limiting_low))
   Limiting_med<-with(Koala_limits_yearly,ifelse(Food_EN>Food_WTM_min,0,1))
@@ -272,10 +275,10 @@ for(jobnum in jstart:jfinish){
   Koala_limits_yearly<-cbind(Koala_limits_yearly,ThermIndex_nomilk)
   
   ## Sum of weeks in negative energy or water balance/food intake above average
-  UpIntake_wks<-sum(Koala_limits_yearly$LimE,Koala_limits_yearly$LimWMact_min)
-  NegBalance_wks<-sum(Koala_limits_yearly$Lim2E,Koala_limits_yearly$Lim2WMact_min)
-  UpIntake_wks_nomilk<-sum(Koala_limits_yearly$LimE_nomilk,Koala_limits_yearly$LimWMact_min)
-  NegBalance_wks_nomilk<-sum(Koala_limits_yearly$Lim2E_nomilk,Koala_limits_yearly$Lim2WMact_min)
+  UpIntake_wks<-with(Koala_limits_yearly, LimE+LimWMact_min)
+  NegBalance_wks<-with(Koala_limits_yearly, Lim2E+Lim2WMact_min)
+  UpIntake_wks_nomilk<-with(Koala_limits_yearly, LimE_nomilk+LimWMact_min)
+  NegBalance_wks_nomilk<-with(Koala_limits_yearly, Lim2E_nomilk+Lim2WMact_min)
   
   Koala_limits_yearly<-cbind(Koala_limits_yearly,UpIntake_wks,UpIntake_wks_nomilk,NegBalance_wks,NegBalance_wks_nomilk)
     
