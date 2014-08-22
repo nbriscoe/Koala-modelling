@@ -24,7 +24,8 @@ for(jobnum in jstart:jfinish){
   library(data.table)
   file<-paste(i,'sim_',sim,'.bin',sep="")
   load(file)  # Loads file with summed daily values
-
+  
+   
   ## fix up column names
   #colnames(Aust_sites)[20:23]<-c("WTR_G_H","RAINWET","RAINFALL","MAX_PCTWET")
   # use data table to speed things up
@@ -282,6 +283,18 @@ for(jobnum in jstart:jfinish){
   
   Koala_limits_yearly<-cbind(Koala_limits_yearly,UpIntake_wks,UpIntake_wks_nomilk,NegBalance_wks,NegBalance_wks_nomilk)
     
+  ## Maximum run of weeks in negative energy or water balance/food intake above average
+  Runs<- tapply(A$LimE, A$years, rle)
+  Max_run_negE <- sapply(Runs, function(x) max(x$lengths[x$values == 1]))
+  Max_run_negE[Max_run_negE < 0] <- 0
+  Runs<- tapply(A$LimWMact_min, A$years, rle)
+  Max_run_negW <- sapply(Runs, function(x) max(x$lengths[x$values == 1]))
+  Max_run_negW[Max_run_negW < 0] <- 0
+  Runs<- tapply(A$LimE_nomilk, A$years, rle)
+  Max_run_negE_nomilk <- sapply(Runs, function(x) max(x$lengths[x$values == 1]))
+  Max_run_negE_nomilk[Max_run_negE_nomilk < 0] <- 0
+  
+  Koala_limits_yearly<-cbind(Koala_limits_yearly,Max_run_negW,Max_run_negE,Max_run_negE_nomilk)
   
   ## Output of max energy and water requirements (daily & weekly)
   Day_max<-as.data.frame(AUST2[,lapply(.SD,max),by=list(Sites,Morph,Behav)])
