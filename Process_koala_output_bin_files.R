@@ -16,7 +16,6 @@ jfinish<-numsites*(simnum-1)+numsites
 
 for(jobnum in jstart:jfinish){
   
-  
   #bioreg<-0
   #sim<-1
   i<-jobnum
